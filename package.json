@@ -1,17 +1,19 @@
 {
   "name": "alpinejs-money",
-  "version": "1.0.0",
-  "description": "Format money through Alpine JS into any language and currency",
+  "version": "1.0.1",
+  "description": "Format money through Alpine JS into any language and currency.",
   "keywords": [
     "Alpine",
     "Alpine JS",
+    "Alpine JS Plugin",
     "Alpine JS Plugins",
     "Alpine JS Money",
-    "Format Money"
+    "Format Money",
+    "Shopify",
+    "Shopify Money"
   ],
   "author": "Mark Mead",
   "license": "MIT",
-  "main": "dist/money.cjs.js",
   "module": "dist/money.esm.js",
   "unpkg": "dist/money.min.js",
   "scripts": {
