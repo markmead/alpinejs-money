@@ -1,4 +1,4 @@
-# Alpine JS money
+# Alpine JS Money
 
 Format money through Alpine JS into any language and currency 💸
 
@@ -15,7 +15,7 @@ Format money through Alpine JS into any language and currency 💸
 <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 ```
 
-### With Package Manager
+### With a Package Manager
 
 ```shell
 npm install -D alpinejs-money
