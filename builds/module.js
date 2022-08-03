@@ -1,3 +1,3 @@
-import money from "../src/index.js";
+import money from '../src/index.js'
 
-export default money;
+export default money
