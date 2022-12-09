@@ -1,5 +1,3 @@
 import money from '../src/index.js'
 
-document.addEventListener('alpine:init', () => {
-  window.Alpine.plugin(money)
-})
+document.addEventListener('alpine:init', () => window.Alpine.plugin(money))
