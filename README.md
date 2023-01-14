@@ -37,20 +37,29 @@ Alpine.start()
 ### Basic
 
 ```html
-<div x-data="{ price: 1299 }">
-  <p x-money="price" data-lang="ja-JP" data-currency="JPY"></p>
+<div x-data="{ priceInt: 9999, priceDec: 99.99 }">
+  <p x-money.en-GB.GBP="priceInt"></p>
+  <p x-money.ja-JP.JPY="priceInt"></p>
+  <p x-money.en-US.USD="priceInt"></p>
+
+  // Decimal
+  <p x-money.en-GB.GBP.decimal="priceDec"></p>
+  <p x-money.ja-JP.JPY.decimal="priceDec"></p>
+  <p x-money.en-US.USD.decimal="priceDec"></p>
 </div>
 ```
 
 ### With Shopify
 
 ```html
-<div x-data="{ price: 1299 }">
-  <p x-money.shopify="price"></p>
+<div x-data="{ priceInt: 9999, priceDec: 99.99 }">
+  <p x-money.shopify="priceInt"></p>
+  <p x-money.shopify.decimal="priceDec"></p>
 </div>
 ```
 
-This will look for `Shopify.locale` and `Shopify.currency.active` which is on the global `Shopify` object.
+This will look for `Shopify.locale` and `Shopify.currency.active` which is on
+the global `Shopify` object.
 
 If this isn't set by default then you can set it like this.
 
