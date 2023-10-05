@@ -42,7 +42,7 @@ Alpine.start()
   <p x-money.ja-JP.JPY="priceInt"></p>
   <p x-money.en-US.USD="priceInt"></p>
 
-  // Decimal
+  <!-- Decimal -->
   <p x-money.en-GB.GBP.decimal="priceDec"></p>
   <p x-money.ja-JP.JPY.decimal="priceDec"></p>
   <p x-money.en-US.USD.decimal="priceDec"></p>
@@ -70,6 +70,21 @@ window.Shopify = {
     active: 'CAD',
   },
 }
+```
+
+### With Data Attributes
+
+```html
+<div x-data="{ priceInt: 9999, priceDec: 99.99 }">
+  <p x-money="priceInt" data-locale="en-GB" data-currency="GBP"></p>
+  <p x-money="priceInt" data-locale="ja-JP" data-currency="JPY"></p>
+  <p x-money="priceInt" data-locale="en-US" data-currency="USD"></p>
+
+  <!-- Decimal -->
+  <p x-money.decimal="priceInt" data-locale="en-GB" data-currency="GBP"></p>
+  <p x-money.decimal="priceInt" data-locale="ja-JP" data-currency="JPY"></p>
+  <p x-money.decimal="priceInt" data-locale="en-US" data-currency="USD"></p>
+</div>
 ```
 
 ### Stats

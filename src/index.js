@@ -2,13 +2,18 @@ export default function (Alpine) {
   Alpine.directive(
     'money',
     (el, { expression, modifiers }, { evaluateLater, effect }) => {
-      const [modLang, modCurrency] = modifiers
+      const [modLang, modCurrency] = modifiers || [false, false]
 
       const isDecimal = modifiers.includes('decimal')
       const isShopify = modifiers.includes('shopify')
 
-      const formatLang = isShopify ? Shopify.locale : modLang
-      const formatCurrency = isShopify ? Shopify.currency.active : modCurrency
+      const dataLocale = el.dataset.locale
+      const dataCurrency = el.dataset.currency
+
+      const formatLang = isShopify ? Shopify.locale : modLang || dataLocale
+      const formatCurrency = isShopify
+        ? Shopify.currency.active
+        : modCurrency || dataCurrency
 
       const getValue = evaluateLater(expression)
 
