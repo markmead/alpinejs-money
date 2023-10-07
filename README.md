@@ -49,6 +49,40 @@ Alpine.start()
 </div>
 ```
 
+### With Data Attributes
+
+```html
+<div x-data="{ priceInt: 9999, priceDec: 99.99 }">
+  <p x-money="priceInt" data-locale="en-GB" data-currency="GBP"></p>
+  <p x-money="priceInt" data-locale="ja-JP" data-currency="JPY"></p>
+  <p x-money="priceInt" data-locale="en-US" data-currency="USD"></p>
+
+  <!-- Decimal -->
+  <p x-money.decimal="priceDec" data-locale="en-GB" data-currency="GBP"></p>
+  <p x-money.decimal="priceDec" data-locale="ja-JP" data-currency="JPY"></p>
+  <p x-money.decimal="priceDec" data-locale="en-US" data-currency="USD"></p>
+</div>
+```
+
+### With Global
+
+```html
+<div x-data="{ priceInt: 9999, priceDec: 99.99 }">
+  <p x-money.global="priceInt"></p>
+  <p x-money.global.decimal="priceDec"></p>
+</div>
+```
+
+This will look for `locale` and `currency` which is on the global `xMoney`
+object.
+
+```js
+window.xMoney = {
+  locale: 'en-CA',
+  currency: 'CAD',
+}
+```
+
 ### With Shopify
 
 ```html
@@ -70,21 +104,6 @@ window.Shopify = {
     active: 'CAD',
   },
 }
-```
-
-### With Data Attributes
-
-```html
-<div x-data="{ priceInt: 9999, priceDec: 99.99 }">
-  <p x-money="priceInt" data-locale="en-GB" data-currency="GBP"></p>
-  <p x-money="priceInt" data-locale="ja-JP" data-currency="JPY"></p>
-  <p x-money="priceInt" data-locale="en-US" data-currency="USD"></p>
-
-  <!-- Decimal -->
-  <p x-money.decimal="priceInt" data-locale="en-GB" data-currency="GBP"></p>
-  <p x-money.decimal="priceInt" data-locale="ja-JP" data-currency="JPY"></p>
-  <p x-money.decimal="priceInt" data-locale="en-US" data-currency="USD"></p>
-</div>
 ```
 
 ### Stats
