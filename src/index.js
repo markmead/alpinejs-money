@@ -42,7 +42,7 @@ export default function (Alpine) {
 
       effect(() => {
         getValue((moneyValue) => {
-          if (!moneyValue || !formatLang || !formatCurrency) {
+          if ((!moneyValue && moneyValue !== 0)  || !formatLang || !formatCurrency) {
             return
           }
 
