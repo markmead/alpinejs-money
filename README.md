@@ -1,6 +1,12 @@
 # Alpine JS Money
 
-Format money through Alpine JS into any language and currency 💸
+Alpine JS plugin for formatting currency values in multiple languages and
+currencies 💸
+
+![](https://img.shields.io/bundlephobia/min/alpinejs-money)
+![](https://img.shields.io/npm/v/alpinejs-money)
+![](https://img.shields.io/npm/dt/alpinejs-money)
+![](https://img.shields.io/github/license/markmead/alpinejs-money)
 
 ## Install
 
@@ -9,10 +15,10 @@ Format money through Alpine JS into any language and currency 💸
 ```html
 <script
   defer
-  src="https://unpkg.com/alpinejs-money@latest/dist/money.min.js"
+  src="https://unpkg.com/alpinejs-money@latest/dist/cdn.min.js"
 ></script>
 
-<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script defer src="https://unpkg.com/alpinejs@latest/dist/cdn.min.js"></script>
 ```
 
 ### With a Package Manager
@@ -106,9 +112,26 @@ window.Shopify = {
 }
 ```
 
-### Stats
+### With Flat Modifier
 
-![](https://img.shields.io/bundlephobia/min/alpinejs-money)
-![](https://img.shields.io/npm/v/alpinejs-money)
-![](https://img.shields.io/npm/dt/alpinejs-money)
-![](https://img.shields.io/github/license/markmead/alpinejs-money)
+The `.flat` modifier only removes `.00` (or `,00` for some locales) when the
+value is a whole number.
+
+```html
+<div x-data="{ priceInt: 6010 }">
+  <!-- £60.10 -->
+  <p x-money.en-GB.GBP="priceInt"></p>
+
+  <!-- £60.10 (It doesn't make sense to remove `.10` here) -->
+  <p x-money.en-GB.GBP.flat="priceInt"></p>
+</div>
+```
+
+<div x-data="{ priceInt: 6000 }">
+  <!-- £60.00 -->
+  <p x-money.en-GB.GBP="priceInt"></p>
+
+  <!-- £60 -->
+  <p x-money.en-GB.GBP.flat="priceInt"></p>
+</div>
+```

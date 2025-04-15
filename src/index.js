@@ -7,6 +7,7 @@ export default function (Alpine) {
       const isDecimal = modifiers.includes('decimal')
       const isShopify = modifiers.includes('shopify')
       const isGlobal = modifiers.includes('global')
+      const isFlat = modifiers.includes('flat')
 
       const {
         dataset: { locale: dataLocale, currency: dataCurrency },
@@ -42,7 +43,11 @@ export default function (Alpine) {
 
       effect(() => {
         getValue((moneyValue) => {
-          if ((!moneyValue && moneyValue !== 0)  || !formatLang || !formatCurrency) {
+          if (
+            (!moneyValue && moneyValue !== 0) ||
+            !formatLang ||
+            !formatCurrency
+          ) {
             return
           }
 
@@ -52,7 +57,13 @@ export default function (Alpine) {
             currency: formatCurrency,
           }).format(formattedMoney)
 
-          el.innerText = formattedPrice
+          let displayPrice = formattedPrice
+
+          if (isFlat) {
+            displayPrice = formattedPrice.replace(/([.,]00)(?!\d)/, '')
+          }
+
+          el.innerText = displayPrice
         })
       })
     }
