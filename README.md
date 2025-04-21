@@ -125,7 +125,6 @@ value is a whole number.
   <!-- £60.10 (It doesn't make sense to remove `.10` here) -->
   <p x-money.en-GB.GBP.flat="priceInt"></p>
 </div>
-```
 
 <div x-data="{ priceInt: 6000 }">
   <!-- £60.00 -->
