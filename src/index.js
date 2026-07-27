@@ -1,69 +1,85 @@
+// Modifiers that are flags rather than a locale or currency code. They have to be filtered out
+// before the positional read below, or `x-money.decimal` would be treated as a locale.
+const FLAG_MODIFIERS = ['decimal', 'shopify', 'global', 'flat']
+
 export default function (Alpine) {
   Alpine.directive(
     'money',
     (el, { expression, modifiers }, { evaluateLater, effect }) => {
-      const [modLocale, modCurrency] = modifiers || [false, false]
-
       const isDecimal = modifiers.includes('decimal')
       const isShopify = modifiers.includes('shopify')
       const isGlobal = modifiers.includes('global')
       const isFlat = modifiers.includes('flat')
 
-      const {
-        dataset: { locale: dataLocale, currency: dataCurrency },
-      } = el
+      const [modifierLocale, modifierCurrency] = modifiers.filter(
+        (modifier) => !FLAG_MODIFIERS.includes(modifier)
+      )
 
-      let formatLang = ''
-      let formatCurrency = ''
+      function resolveFormat() {
+        if (isGlobal) {
+          const { locale, currency } = globalThis.xMoney || {}
 
-      if (isGlobal) {
-        const { locale: globalLocale, currency: globalCurrency } =
-          window?.xMoney || {}
+          return { locale, currency }
+        }
 
-        formatLang = globalLocale
-        formatCurrency = globalCurrency
+        if (isShopify) {
+          const { locale, currency } = globalThis.Shopify || {}
+
+          return { locale, currency: currency?.active }
+        }
+
+        const { locale: dataLocale, currency: dataCurrency } = el.dataset
+
+        return {
+          locale: modifierLocale || dataLocale,
+          currency: modifierCurrency || dataCurrency,
+        }
       }
 
-      if (isShopify) {
-        const {
-          locale: shopifyLocale,
-          currency: { active: shopifyCurrency },
-        } = window?.Shopify || {}
+      // Constructing an Intl.NumberFormat is ~50x the cost of using one, so it is kept across
+      // renders and only rebuilt when the locale or currency actually changes.
+      let formatterKey = ''
+      let formatter = null
 
-        formatLang = shopifyLocale
-        formatCurrency = shopifyCurrency
-      }
+      function getFormatter(locale, currency) {
+        const nextKey = `${locale}|${currency}`
 
-      if (!isShopify && !isGlobal) {
-        formatLang = modLocale || dataLocale
-        formatCurrency = modCurrency || dataCurrency
+        if (nextKey !== formatterKey) {
+          formatter = new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency,
+            ...(isFlat && { trailingZeroDisplay: 'stripIfInteger' }),
+          })
+
+          formatterKey = nextKey
+        }
+
+        return formatter
       }
 
       const getValue = evaluateLater(expression)
 
       effect(() => {
         getValue((moneyValue) => {
-          if (
-            (!moneyValue && moneyValue !== 0) ||
-            !formatLang ||
-            !formatCurrency
-          ) {
+          if (moneyValue === null || moneyValue === undefined || moneyValue === '') {
             return
           }
 
-          const formattedMoney = isDecimal ? moneyValue : moneyValue / 100
-          const formattedPrice = new Intl.NumberFormat(formatLang, {
-            style: 'currency',
-            currency: formatCurrency,
-          }).format(formattedMoney)
+          const { locale, currency } = resolveFormat()
 
-          let displayPrice = formattedPrice
-
-          if (isFlat) {
-            displayPrice = formattedPrice.replace(/([.,]00)(?!\d)/, '')
+          if (!locale || !currency) {
+            return
           }
 
-          el.innerText = displayPrice
+          const numericValue = Number(moneyValue)
+
+          if (!Number.isFinite(numericValue)) {
+            return
+          }
+
+          el.textContent = getFormatter(locale, currency).format(
+            isDecimal ? numericValue : numericValue / 100
+          )
         })
       })
     }
