@@ -38,23 +38,31 @@ export default function (Alpine) {
 
       // Constructing an Intl.NumberFormat is ~50x the cost of using one, so it is kept across
       // renders and only rebuilt when the locale or currency actually changes.
-      let formatterKey = ''
-      let formatter = null
+      let formatKey = ''
+      let cachedFormat = null
 
-      function getFormatter(locale, currency) {
+      function getFormat(locale, currency) {
         const nextKey = `${locale}|${currency}`
 
-        if (nextKey !== formatterKey) {
-          formatter = new Intl.NumberFormat(locale, {
+        if (nextKey !== formatKey) {
+          const formatter = new Intl.NumberFormat(locale, {
             style: 'currency',
             currency,
             ...(isFlat && { trailingZeroDisplay: 'stripIfInteger' }),
           })
 
-          formatterKey = nextKey
+          // A minor unit is not always a hundredth: JPY has no subunit at all, while KWD and
+          // BHD have three decimal places. Intl knows the exponent per currency, so take it
+          // from there instead of assuming /100.
+          cachedFormat = {
+            formatter,
+            minorUnitDivisor: 10 ** formatter.resolvedOptions().maximumFractionDigits,
+          }
+
+          formatKey = nextKey
         }
 
-        return formatter
+        return cachedFormat
       }
 
       const getValue = evaluateLater(expression)
@@ -77,8 +85,10 @@ export default function (Alpine) {
             return
           }
 
-          el.textContent = getFormatter(locale, currency).format(
-            isDecimal ? numericValue : numericValue / 100
+          const { formatter, minorUnitDivisor } = getFormat(locale, currency)
+
+          el.textContent = formatter.format(
+            isDecimal ? numericValue : numericValue / minorUnitDivisor
           )
         })
       })

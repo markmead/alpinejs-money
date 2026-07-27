@@ -23,10 +23,8 @@
   "main": "dist/esm.min.js",
   "module": "dist/esm.min.js",
   "unpkg": "dist/cdn.min.js",
-  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/esm.min.js",
       "default": "./dist/esm.min.js"
     }

@@ -55,6 +55,27 @@ Alpine.start()
 </div>
 ```
 
+### Minor Units
+
+By default the value is treated as **minor units** and divided by the number of
+decimal places the currency actually has, which `Intl` knows per currency.
+
+```html
+<div x-data="{ priceInt: 9999 }">
+  <!-- £99.99 - GBP has 2 decimal places, so 9999 / 100 -->
+  <p x-money.en-GB.GBP="priceInt"></p>
+
+  <!-- ￥9,999 - JPY has no subunit, so no division -->
+  <p x-money.ja-JP.JPY="priceInt"></p>
+
+  <!-- BHD 9.999 - BHD has 3 decimal places, so 9999 / 1000 -->
+  <p x-money.en-US.BHD="priceInt"></p>
+</div>
+```
+
+Use the `.decimal` modifier when the value is already a major-unit decimal and
+should not be divided at all.
+
 ### With Data Attributes
 
 ```html
