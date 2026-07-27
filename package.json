@@ -13,6 +13,11 @@
   "license": "MIT",
   "module": "dist/esm.min.js",
   "unpkg": "dist/cdn.min.js",
+  "files": [
+    "dist/",
+    "src/",
+    "builds/"
+  ],
   "scripts": {
     "build": "node scripts/build.js"
   },
