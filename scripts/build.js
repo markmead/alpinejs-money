@@ -1,21 +1,20 @@
 import { build } from 'esbuild'
 
-// Both entry points ship minified, so nothing about source formatting can reach dist/.
-const sharedOptions = {
+const sharedBuildOptions = {
   minify: true,
   bundle: true,
   target: 'es2022',
 }
 
 await build({
-  ...sharedOptions,
+  ...sharedBuildOptions,
   entryPoints: ['builds/cdn.js'],
   outfile: 'dist/cdn.min.js',
   format: 'iife',
 })
 
 await build({
-  ...sharedOptions,
+  ...sharedBuildOptions,
   entryPoints: ['builds/module.js'],
   outfile: 'dist/esm.min.js',
   format: 'esm',

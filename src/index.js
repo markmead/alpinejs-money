@@ -1,81 +1,76 @@
-// Modifiers that are flags rather than a locale or currency code. They have to be filtered out
-// before the positional read below, or `x-money.decimal` would be treated as a locale.
+// Filtered out before the positional read below, or `x-money.decimal` is treated as a locale.
 const FLAG_MODIFIERS = ['decimal', 'shopify', 'global', 'flat']
 
 export default function (Alpine) {
   Alpine.directive(
     'money',
-    (el, { expression, modifiers }, { evaluateLater, effect }) => {
+    (moneyElement, { expression, modifiers }, { evaluateLater, effect }) => {
       const isDecimal = modifiers.includes('decimal')
       const isShopify = modifiers.includes('shopify')
       const isGlobal = modifiers.includes('global')
       const isFlat = modifiers.includes('flat')
 
       const [modifierLocale, modifierCurrency] = modifiers.filter(
-        (modifier) => !FLAG_MODIFIERS.includes(modifier)
+        (modifierName) => !FLAG_MODIFIERS.includes(modifierName)
       )
 
-      function resolveFormat() {
+      function resolveMoneyFormat() {
         if (isGlobal) {
-          const { locale, currency } = globalThis.xMoney || {}
+          const { locale: globalLocale, currency: globalCurrency } = globalThis.xMoney || {}
 
-          return { locale, currency }
+          return { formatLocale: globalLocale, formatCurrency: globalCurrency }
         }
 
         if (isShopify) {
-          const { locale, currency } = globalThis.Shopify || {}
+          const { locale: shopifyLocale, currency: shopifyCurrency } = globalThis.Shopify || {}
 
-          return { locale, currency: currency?.active }
+          return { formatLocale: shopifyLocale, formatCurrency: shopifyCurrency?.active }
         }
 
-        const { locale: dataLocale, currency: dataCurrency } = el.dataset
+        const { locale: datasetLocale, currency: datasetCurrency } = moneyElement.dataset
 
         return {
-          locale: modifierLocale || dataLocale,
-          currency: modifierCurrency || dataCurrency,
+          formatLocale: modifierLocale || datasetLocale,
+          formatCurrency: modifierCurrency || datasetCurrency,
         }
       }
 
-      // Constructing an Intl.NumberFormat is ~50x the cost of using one, so it is kept across
-      // renders and only rebuilt when the locale or currency actually changes.
-      let formatKey = ''
-      let cachedFormat = null
+      // Building an Intl.NumberFormat costs ~50x using one, so it survives across renders.
+      let cachedFormatKey = ''
+      let cachedFormatter = null
+      let cachedMinorUnitDivisor = 1
 
-      function getFormat(locale, currency) {
-        const nextKey = `${locale}|${currency}`
+      function getCachedFormatter(formatLocale, formatCurrency) {
+        const nextFormatKey = `${formatLocale}|${formatCurrency}`
 
-        if (nextKey !== formatKey) {
-          const formatter = new Intl.NumberFormat(locale, {
+        if (nextFormatKey !== cachedFormatKey) {
+          cachedFormatter = new Intl.NumberFormat(formatLocale, {
             style: 'currency',
-            currency,
+            currency: formatCurrency,
             ...(isFlat && { trailingZeroDisplay: 'stripIfInteger' }),
           })
 
-          // A minor unit is not always a hundredth: JPY has no subunit at all, while KWD and
-          // BHD have three decimal places. Intl knows the exponent per currency, so take it
-          // from there instead of assuming /100.
-          cachedFormat = {
-            formatter,
-            minorUnitDivisor: 10 ** formatter.resolvedOptions().maximumFractionDigits,
-          }
+          // A minor unit is not always a hundredth: JPY has no subunit, KWD and BHD have three.
+          cachedMinorUnitDivisor =
+            10 ** cachedFormatter.resolvedOptions().maximumFractionDigits
 
-          formatKey = nextKey
+          cachedFormatKey = nextFormatKey
         }
 
-        return cachedFormat
+        return cachedFormatter
       }
 
-      const getValue = evaluateLater(expression)
+      const getMoneyValue = evaluateLater(expression)
 
       effect(() => {
-        getValue((moneyValue) => {
+        getMoneyValue((moneyValue) => {
           if (moneyValue === null || moneyValue === undefined || moneyValue === '') {
             return
           }
 
-          const { locale, currency } = resolveFormat()
+          const { formatLocale, formatCurrency } = resolveMoneyFormat()
 
-          if (!locale || !currency) {
+          if (!formatLocale || !formatCurrency) {
             return
           }
 
@@ -85,10 +80,10 @@ export default function (Alpine) {
             return
           }
 
-          const { formatter, minorUnitDivisor } = getFormat(locale, currency)
+          const moneyFormatter = getCachedFormatter(formatLocale, formatCurrency)
 
-          el.textContent = formatter.format(
-            isDecimal ? numericValue : numericValue / minorUnitDivisor
+          moneyElement.textContent = moneyFormatter.format(
+            isDecimal ? numericValue : numericValue / cachedMinorUnitDivisor
           )
         })
       })
