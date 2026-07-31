@@ -1,69 +1,95 @@
+// Filtered out before the positional read below, or `x-money.decimal` is treated as a locale.
+const FLAG_MODIFIERS = ['decimal', 'shopify', 'global', 'flat']
+
 export default function (Alpine) {
   Alpine.directive(
     'money',
-    (el, { expression, modifiers }, { evaluateLater, effect }) => {
-      const [modLocale, modCurrency] = modifiers || [false, false]
-
+    (moneyElement, { expression, modifiers }, { evaluateLater, effect }) => {
       const isDecimal = modifiers.includes('decimal')
       const isShopify = modifiers.includes('shopify')
       const isGlobal = modifiers.includes('global')
       const isFlat = modifiers.includes('flat')
 
-      const {
-        dataset: { locale: dataLocale, currency: dataCurrency },
-      } = el
+      const [modifierLocale, modifierCurrency] = modifiers.filter(
+        (modifierName) => !FLAG_MODIFIERS.includes(modifierName)
+      )
 
-      let formatLang = ''
-      let formatCurrency = ''
+      function resolveMoneyFormat() {
+        if (isGlobal) {
+          const { locale: globalLocale, currency: globalCurrency } = globalThis.xMoney || {}
 
-      if (isGlobal) {
-        const { locale: globalLocale, currency: globalCurrency } =
-          window?.xMoney || {}
+          return { formatLocale: globalLocale, formatCurrency: globalCurrency }
+        }
 
-        formatLang = globalLocale
-        formatCurrency = globalCurrency
+        if (isShopify) {
+          const { locale: shopifyLocale, currency: shopifyCurrency } = globalThis.Shopify || {}
+
+          return { formatLocale: shopifyLocale, formatCurrency: shopifyCurrency?.active }
+        }
+
+        const { locale: datasetLocale, currency: datasetCurrency } = moneyElement.dataset
+
+        return {
+          formatLocale: modifierLocale || datasetLocale,
+          formatCurrency: modifierCurrency || datasetCurrency,
+        }
       }
 
-      if (isShopify) {
-        const {
-          locale: shopifyLocale,
-          currency: { active: shopifyCurrency },
-        } = window?.Shopify || {}
+      // Building an Intl.NumberFormat costs ~50x using one, so it survives across renders.
+      let cachedFormatKey = ''
+      let cachedFormatter = null
+      let cachedMinorUnitDivisor = 1
 
-        formatLang = shopifyLocale
-        formatCurrency = shopifyCurrency
+      function getCachedFormatter(formatLocale, formatCurrency) {
+        const nextFormatKey = `${formatLocale}|${formatCurrency}`
+
+        if (nextFormatKey !== cachedFormatKey) {
+          cachedFormatter = new Intl.NumberFormat(formatLocale, {
+            style: 'currency',
+            currency: formatCurrency,
+            ...(isFlat && { trailingZeroDisplay: 'stripIfInteger' }),
+          })
+
+          // A minor unit is not always a hundredth: JPY has no subunit, KWD and BHD have three.
+          cachedMinorUnitDivisor =
+            10 ** cachedFormatter.resolvedOptions().maximumFractionDigits
+
+          cachedFormatKey = nextFormatKey
+        }
+
+        return cachedFormatter
       }
 
-      if (!isShopify && !isGlobal) {
-        formatLang = modLocale || dataLocale
-        formatCurrency = modCurrency || dataCurrency
-      }
-
-      const getValue = evaluateLater(expression)
+      const getMoneyValue = evaluateLater(expression)
 
       effect(() => {
-        getValue((moneyValue) => {
-          if (
-            (!moneyValue && moneyValue !== 0) ||
-            !formatLang ||
-            !formatCurrency
-          ) {
+        getMoneyValue((moneyValue) => {
+          // `Number` reads `false`, `'   '` and `[]` as 0, which would render a real £0.00.
+          const isNumericInput =
+            typeof moneyValue === 'number' ||
+            (typeof moneyValue === 'string' && moneyValue.trim() !== '')
+
+          if (!isNumericInput) {
             return
           }
 
-          const formattedMoney = isDecimal ? moneyValue : moneyValue / 100
-          const formattedPrice = new Intl.NumberFormat(formatLang, {
-            style: 'currency',
-            currency: formatCurrency,
-          }).format(formattedMoney)
+          const numericValue = Number(moneyValue)
 
-          let displayPrice = formattedPrice
-
-          if (isFlat) {
-            displayPrice = formattedPrice.replace(/([.,]00)(?!\d)/, '')
+          if (!Number.isFinite(numericValue)) {
+            return
           }
 
-          el.innerText = displayPrice
+          const { formatLocale, formatCurrency } = resolveMoneyFormat()
+
+          if (!formatLocale || !formatCurrency) {
+            return
+          }
+
+          const moneyFormatter = getCachedFormatter(formatLocale, formatCurrency)
+
+          moneyElement.textContent = moneyFormatter.format(
+            isDecimal ? numericValue : numericValue / cachedMinorUnitDivisor
+          )
         })
       })
     }

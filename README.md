@@ -24,6 +24,8 @@ currencies 💸
 ### With a Package Manager
 
 ```shell
+pnpm add -D alpinejs-money
+
 npm install -D alpinejs-money
 
 yarn add -D alpinejs-money
@@ -54,6 +56,27 @@ Alpine.start()
   <p x-money.en-US.USD.decimal="priceDec"></p>
 </div>
 ```
+
+### Minor Units
+
+By default the value is treated as **minor units** and divided by the number of
+decimal places the currency actually has, which `Intl` knows per currency.
+
+```html
+<div x-data="{ priceInt: 9999 }">
+  <!-- £99.99 - GBP has 2 decimal places, so 9999 / 100 -->
+  <p x-money.en-GB.GBP="priceInt"></p>
+
+  <!-- ￥9,999 - JPY has no subunit, so no division -->
+  <p x-money.ja-JP.JPY="priceInt"></p>
+
+  <!-- BHD 9.999 - BHD has 3 decimal places, so 9999 / 1000 -->
+  <p x-money.en-US.BHD="priceInt"></p>
+</div>
+```
+
+Use the `.decimal` modifier when the value is already a major-unit decimal and
+should not be divided at all.
 
 ### With Data Attributes
 
@@ -101,7 +124,7 @@ window.xMoney = {
 This will look for `Shopify.locale` and `Shopify.currency.active` which is on
 the global `Shopify` object.
 
-If this isn't set by default then you can set it like this.
+Most themes set this for you. If yours doesn't, set it yourself.
 
 ```js
 window.Shopify = {
@@ -114,8 +137,9 @@ window.Shopify = {
 
 ### With Flat Modifier
 
-The `.flat` modifier only removes `.00` (or `,00` for some locales) when the
-value is a whole number.
+The `.flat` modifier drops the decimal part when the value is a whole number,
+and leaves it alone otherwise. It works for currencies with any number of
+decimal places, so `BHD 60.000` flattens to `BHD 60` too.
 
 ```html
 <div x-data="{ priceInt: 6010 }">
@@ -134,3 +158,39 @@ value is a whole number.
   <p x-money.en-GB.GBP.flat="priceInt"></p>
 </div>
 ```
+
+## When Nothing Renders
+
+The element is left untouched, rather than erroring or showing a placeholder,
+when any of these are true.
+
+- The locale or currency can't be resolved. With `.shopify` or `.global` this
+  usually means the global object isn't on the page yet.
+- The value is `null`, `undefined` or an empty string. Note that `0` does
+  render, as `£0.00`.
+- The value isn't a finite number, so `"abc"` renders nothing rather than
+  `£NaN`.
+
+## Upgrading from v1
+
+### Minor units are per currency
+
+v1 always divided by 100. v2 divides by the number of decimal places the
+currency actually has, so zero-decimal and three-decimal currencies changed.
+
+| Value  | Currency | v1          | v2          |
+| ------ | -------- | ----------- | ----------- |
+| `9999` | GBP      | `£99.99`    | `£99.99`    |
+| `9999` | JPY      | `￥100`     | `￥9,999`   |
+| `9999` | BHD      | `BHD 99.990` | `BHD 9.999` |
+
+Two-decimal currencies are unaffected. If you were compensating for the old
+behaviour on JPY, KWD or BHD, drop the compensation.
+
+### Modifier order no longer matters
+
+In v1 the first two modifiers were read as locale and currency whatever they
+were, so `x-money.decimal` with `data-locale` passed `decimal` to `Intl` as
+the locale. It didn't error, it just quietly used the browser's default
+locale. v2 recognises `decimal`, `flat`, `global` and `shopify` as modifiers
+and reads the locale and currency from what's left.
