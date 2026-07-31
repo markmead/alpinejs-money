@@ -64,19 +64,24 @@ export default function (Alpine) {
 
       effect(() => {
         getMoneyValue((moneyValue) => {
-          if (moneyValue === null || moneyValue === undefined || moneyValue === '') {
-            return
-          }
+          // `Number` reads `false`, `'   '` and `[]` as 0, which would render a real £0.00.
+          const isNumericInput =
+            typeof moneyValue === 'number' ||
+            (typeof moneyValue === 'string' && moneyValue.trim() !== '')
 
-          const { formatLocale, formatCurrency } = resolveMoneyFormat()
-
-          if (!formatLocale || !formatCurrency) {
+          if (!isNumericInput) {
             return
           }
 
           const numericValue = Number(moneyValue)
 
           if (!Number.isFinite(numericValue)) {
+            return
+          }
+
+          const { formatLocale, formatCurrency } = resolveMoneyFormat()
+
+          if (!formatLocale || !formatCurrency) {
             return
           }
 
